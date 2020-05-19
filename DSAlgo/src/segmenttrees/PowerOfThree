@@ -1,0 +1,89 @@
+public class PowerOfThree {
+    public Pair[] segmentTree;
+    public int[] solve(String A, int[][] B) {
+        int[] binaryValues = new int[A.length()];
+        for(int i=0;i<A.length();i++){
+            binaryValues[i] = Integer.parseInt(A.charAt(i)+"");
+        }
+        segmentTree = new Pair[4*binaryValues.length];
+        build(1,0,binaryValues.length-1,binaryValues);
+        int[] ans = new int[B.length];
+        int i=0;
+        long mod = 3;
+        for(int[] query:B){
+            if(query[0]==0){
+                ans[i++]=(int)((query(1,0,binaryValues.length-1,query[1]-1,query[2]-1).value)%mod);
+            }else if(query[0]==1){
+                update(1,0,binaryValues.length-1,query[1]-1);
+                ans[i++]=-1;
+            }
+        }
+        return ans;
+    }
+    public Pair query(int index,int start,int end,int rStart,int rEnd){
+        if(start==end){
+            return segmentTree[index];
+        }
+        int mid = start + (end-start)/2;
+        if(rStart<=start && rEnd>=end){
+            return segmentTree[index];
+        }else if(rStart<=mid && rEnd>mid){
+            return getValue(query(2*index,start,mid,rStart,rEnd),query(2*index+1,mid+1,end,rStart,rEnd));
+        }else if(rStart>mid){
+            return query(2*index+1,mid+1,end,rStart,rEnd);
+        }else{
+            return query(2*index,start,mid,rStart,rEnd);
+        }
+    }
+    public void update(int index,int start,int end,int updateIndex){
+        if(start==end){
+            if(start==updateIndex && segmentTree[index].value==0){
+                segmentTree[index].value=1;
+            }
+            return;
+        }
+        int mid = start + (end-start)/2;
+        if(updateIndex>mid){
+            update(2*index+1,mid+1,end,updateIndex);
+        }else{
+            update(2*index,start,mid,updateIndex);
+        }
+        segmentTree[index] = getValue(segmentTree[2*index],segmentTree[2*index+1]);
+    }
+    public void build(int index,int start,int end,int[] input){
+        if(start==end){
+            segmentTree[index] = new Pair(1,input[start]);
+            return;
+        }
+        int mid = start + (end-start)/2;
+        build(2*index,start,mid,input);
+        build(2*index+1,mid+1,end,input);
+        segmentTree[index] = getValue(segmentTree[2*index],segmentTree[2*index+1]);
+    }
+    public Pair getValue(Pair a, Pair b){
+        int count = a.count+b.count;
+        long value = (((modEx(b.count)%3)*(a.value%3))%3+(b.value%3))%3;
+        return new Pair(count,value);
+    }
+    public int modEx(int pow){
+        int x = 2;
+        int mod = 3;
+        int ans = 1;
+        while(pow>0){
+            if((pow & 1)==1){
+                ans = (ans*x)%mod;
+            }
+            pow>>=1;
+            x=(x*x)%mod;
+        }
+        return ans%mod;
+    }
+}
+class Pair{
+    int count;
+    long value;
+    Pair(int count,long value){
+        this.count = count;
+        this.value = value;
+    }
+}
